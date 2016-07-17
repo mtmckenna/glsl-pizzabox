@@ -31,25 +31,27 @@ export default Ember.Component.extend({
 	},
 
 	configureEventListeners() {
-		this.set("resizeCanvas", this._resizeCanvas.bind(this));
+		this.set('resizeCanvas', this._resizeCanvas.bind(this));
   },
 
   addEventListeners() {
     this.configureEventListeners();
-    window.addEventListener("resize", this.resizeCanvas, false);
+    window.addEventListener('resize', this.resizeCanvas, false);
   },
 
   removeEventListeners() {
-    const element = this.get("element");
-    element.removeEventListener("resize", this.resizeCanvas, false);
+    const element = this.get('element');
+    element.removeEventListener('resize', this.resizeCanvas, false);
   },
 
   _resizeCanvas() {
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 		const canvas = this.get('element');
+		let gl = canvas.getContext('webgl');
 		canvas.width = width;
 		canvas.height = height;
+		gl.viewport(0, 0, canvas.width, canvas.height);
   }
 });
 
