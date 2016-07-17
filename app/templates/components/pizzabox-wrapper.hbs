@@ -1,0 +1,10 @@
+{{canvas-wrapper}}
+
+{{#power-select options=shaders
+                selected=currentShader
+                searchEnabled=false
+                onchange=(action "changeShader")
+                as |shaderName|}}
+  {{shaderName}}
+{{/power-select}}
+
