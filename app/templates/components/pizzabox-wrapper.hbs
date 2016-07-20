@@ -1,9 +1,9 @@
-{{canvas-wrapper}}
+{{canvas-wrapper fragmentShader=currentFragmentShader vertexShader=currentVertexShader}}
 
-{{#power-select options=shaders
-                selected=currentShader
+{{#power-select options=fragmentShaderNames
+                selected=currentFragmentShaderName
                 searchEnabled=false
-                onchange=(action "changeShader")
+                onchange=(action "changeFragmentShader")
                 as |shaderName|}}
   {{shaderName}}
 {{/power-select}}
