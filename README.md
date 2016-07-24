@@ -1,7 +1,10 @@
 # Glsl-pizzabox
 
-This README outlines the details of collaborating on this Ember application.
-A short introduction of this app could easily go here.
+glsl-pizzabox is an Emberized version of [Mr. Doob's](https://github.com/mrdoob/) [glsl-sandbox](https://github.com/mrdoob/glsl-sandbox). The main difference is that glsl-pizzabox loads shaders from the server's local filesystem rather than from an in-browser code editor.
+
+The goal glsl-pizzabox is to enable more rapid development of fragment shaders. The idea is that you can run glsl-pizzabox and load shader files from a local directory. When opening glsl-pizzabox in the browser, you can select your shader from a dropdown menu to see how it renders. Then, in your editor of choice, you can update the shader file, which will automatically reload so you can see the results of the change. 
+
+Note there are a couple shaders included with this project. These shaders are examples from the [glsl-sandbox website](http://glslsandbox.com/).
 
 ## Prerequisites
 
