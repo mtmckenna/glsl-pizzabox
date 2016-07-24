@@ -1,10 +1,11 @@
 import Ember from 'ember';
 import { compileShader,
 	linkShader,
-	cacheUniformLocation,
+	cacheUniformLocation
 } from '../helpers/gl-helpers';
 
-const pink = { r: 1.0, g: 0.75, b: 0.80 };
+const PINK = { r: 1.0, g: 0.75, b: 0.80 };
+const UNIFORM_NAMES = ['time', 'mouse', 'resolution', 'backBuffer'];
 
 // https://github.com/mrdoob/glsl-sandbox
 export default Ember.Component.extend({
@@ -24,16 +25,21 @@ export default Ember.Component.extend({
     x: 0, y: 0
   },
 
+  programFromCompiledShaders(gl, vertexShader, fragmentShader) {
+    var compiledVertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShader);
+    var compiledFragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShader);
+		return linkShader(gl, compiledVertexShader, compiledFragmentShader);
+  },
+
 	currentProgram: Ember.computed('fragmentShader', function() {
 		let gl = this.get('gl');
-    var compiledVertexShader = compileShader(gl, gl.VERTEX_SHADER, this.get('vertexShader'));
-    var compiledFragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, this.get('fragmentShader'));
-		var program = linkShader(gl, compiledVertexShader, compiledFragmentShader);
+    let vertexShader = this.get('vertexShader');
+    let fragmentShader = this.get('fragmentShader');
+    let program = this.programFromCompiledShaders(gl, vertexShader, fragmentShader);
 
-		cacheUniformLocation(gl, program, 'time');
-		cacheUniformLocation(gl, program, 'mouse');
-		cacheUniformLocation(gl, program, 'resolution');
-		cacheUniformLocation(gl, program, 'backbuffer');
+    UNIFORM_NAMES.forEach(function(uniformName) {
+      cacheUniformLocation(gl, program, uniformName);
+    });
 
 		return program;
 	}),
@@ -58,37 +64,31 @@ export default Ember.Component.extend({
 
 	configureCanvas() {
 		let gl = this.get('gl');
-
 		if (gl) {
-			gl.clearColor(pink.r, pink.g, pink.b, 1.0);
-			gl.enable(gl.DEPTH_TEST);
-			gl.depthFunc(gl.LEQUAL);
-			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      this.clearGl(gl);
 		} else {
 			throw new Error("Nuts! Looks like your browser doesn't support WebGL.");
 		}
 	},
 
-	animate() {
-		this.renderWebGl();
-		this.set('animationFrame', window.requestAnimationFrame(this.animate.bind(this)));
-	},
+  clearGl(gl) {
+    gl.clearColor(PINK.r, PINK.g, PINK.b, 1.0);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  },
 
-	renderWebGl() {
+  setUnfiformsOnGl(gl, program) {
 		let canvas = this.get('element');
-		let gl = this.get('gl');
-		let program = this.get('currentProgram');
 		let mouse = this.get('mousePosition');
-		gl.useProgram(program);
-		gl.clearColor(pink.r, pink.g, pink.b, 1.0);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-		gl.useProgram(program);
-
-    gl.uniform1f(program.uniformsCache['time'], this.time());
+    let time = this.time();
+    gl.uniform1f(program.uniformsCache['time'], time);
     gl.uniform2f(program.uniformsCache['mouse'], mouse.x, mouse.y);
 		gl.uniform2f(program.uniformsCache['resolution'], canvas.width, canvas.height );
 		gl.uniform1i(program.uniformsCache['backbuffer'], 0);
+  },
 
+  setVerticesOnGl(gl, program) {
 		var positionLocation = gl.getAttribLocation(program, 'aPosition');
 		var buffer = gl.createBuffer();
 
@@ -105,7 +105,20 @@ export default Ember.Component.extend({
 
 		gl.enableVertexAttribArray(positionLocation);
 		gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+  },
 
+	animate() {
+		this.renderWebGl();
+		this.set('animationFrame', window.requestAnimationFrame(this.animate.bind(this)));
+	},
+
+	renderWebGl() {
+		let gl = this.get('gl');
+		let program = this.get('currentProgram');
+		gl.useProgram(program);
+    this.clearGl(gl);
+    this.setUnfiformsOnGl(gl, program);
+    this.setVerticesOnGl(gl, program);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	},
 
@@ -130,7 +143,7 @@ export default Ember.Component.extend({
 		const width = window.innerWidth;
 		const height = window.innerHeight;
 		const canvas = this.get('element');
-		let gl = canvas.getContext('webgl');
+    let gl = this.get('gl');
 		canvas.width = width;
 		canvas.height = height;
 		gl.viewport(0, 0, canvas.width, canvas.height);
