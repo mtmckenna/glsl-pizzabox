@@ -38,7 +38,7 @@ export default Ember.Component.extend({
 
   actions: {
     changeFragmentShader: function(shader) {
-      this.set('currentFragmentShaderName', shader);
+      this.get('changeFragmentShader')(shader);
     }
   }
 });
