@@ -1,7 +1,14 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-  currentFragmentShaderName: Ember.computed(function() {
+  didReceiveAttrs() {
+    this._super(...arguments);
+    if (!this.get('currentFragmentShaderName')) {
+      this.set('currentFragmentShaderName', this.get('defaultFragmentShaderName'));
+    }
+  },
+
+  defaultFragmentShaderName: Ember.computed(function() {
     return Object.keys(this.get('shadersHash').fragment)[0];
   }),
 
