@@ -44,19 +44,31 @@ export default Ember.Component.extend({
 		return program;
 	}),
 
-	gl: Ember.computed('element', function() {
+	gl: Ember.computed(function() {
 		let canvas = this.get('element');
-		return canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    var context;
+
+    if (canvas) {
+      context = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    }
+
+		return context;
 	}),
 
   didInsertElement() {
 		Ember.run.scheduleOnce('afterRender', () => {
-      this.addEventListeners();
-			this.resizeCanvas();
-      this.configureCanvas();
-			this.animate();
+      if (this.get('gl')) {
+        this.performInitialWebGlSetup();
+      }
 		});
 	},
+
+  performInitialWebGlSetup() {
+    this.addEventListeners();
+    this.resizeCanvas();
+    this.configureCanvas();
+    this.animate();
+  },
 
 	willDestroyElement() {
 		this.removeEventListeners();
@@ -64,11 +76,7 @@ export default Ember.Component.extend({
 
 	configureCanvas() {
 		let gl = this.get('gl');
-		if (gl) {
-      this.clearGl(gl);
-		} else {
-			throw new Error("Nuts! Looks like your browser doesn't support WebGL.");
-		}
+		if (gl) { this.clearGl(gl); }
 	},
 
   clearGl(gl) {
@@ -78,7 +86,7 @@ export default Ember.Component.extend({
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   },
 
-  setUnfiformsOnGl(gl, program) {
+  setUniformsOnGl(gl, program) {
 		let canvas = this.get('element');
 		let mouse = this.get('mousePosition');
     let time = this.time();
@@ -108,6 +116,7 @@ export default Ember.Component.extend({
   },
 
 	animate() {
+    if (!this.get('gl')) { return; }
 		this.renderWebGl();
 		this.set('animationFrame', window.requestAnimationFrame(this.animate.bind(this)));
 	},
@@ -117,7 +126,7 @@ export default Ember.Component.extend({
 		let program = this.get('currentProgram');
 		gl.useProgram(program);
     this.clearGl(gl);
-    this.setUnfiformsOnGl(gl, program);
+    this.setUniformsOnGl(gl, program);
     this.setVerticesOnGl(gl, program);
 		gl.drawArrays(gl.TRIANGLES, 0, 6);
 	},
@@ -144,6 +153,7 @@ export default Ember.Component.extend({
 		const height = window.innerHeight;
 		const canvas = this.get('element');
     let gl = this.get('gl');
+
 		canvas.width = width;
 		canvas.height = height;
 		gl.viewport(0, 0, canvas.width, canvas.height);

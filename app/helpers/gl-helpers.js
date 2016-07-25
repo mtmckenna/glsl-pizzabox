@@ -28,7 +28,7 @@ export function linkShader (gl, vertexShader, fragmentShader) {
 // https://nickdesaulniers.github.io/RawWebGL/#/51
 export function initBuffer (gl, data, elemPerVertex, attribute) {
   var buffer = gl.createBuffer();
-  if (!buffer) throw new Error('Failed to create buffer.');
+  if (!buffer) { throw new Error('Failed to create buffer.'); }
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   gl.vertexAttribPointer(attribute, elemPerVertex, gl.FLOAT, false, 0, 0);
