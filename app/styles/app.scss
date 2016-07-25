@@ -1,1 +1,12 @@
+$ember-power-select-background-color: rgba(255, 255, 255, 0.50);
+$ember-power-select-highlighted-background: rgba(0, 0, 0, 0.50);
+$ember-power-select-selected-background: rgba(0, 0, 0, 0.0);
+$ember-power-select-trigger-icon-color: rgba(255, 255, 255, 1.0);
+
 @import "ember-power-select";
+
+.canvas-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
