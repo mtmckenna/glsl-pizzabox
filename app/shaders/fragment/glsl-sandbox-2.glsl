@@ -3,15 +3,16 @@
 precision mediump float;
 #endif
 
-uniform vec2  resolution;
+uniform vec2 resolution;
 uniform float time;
 
-void main() {
-	vec2 uPos = ( gl_FragCoord.xy / resolution.xy );//normalize wrt y axis
-	//suPos -= vec2((resolution.x/resolution.y)/2.0, 0.0);//shift origin to center
+varying vec2 vModelPosition;
 
-	uPos.x -= 1.0;
-	uPos.y -= 0.5;
+void main() {
+  vec2 uPos = vModelPosition;
+
+  uPos.x -= 0.5;
+  uPos.y -= 0.0;
 
 	vec3 color = vec3(0.0);
 	float vertColor = 0.0;
