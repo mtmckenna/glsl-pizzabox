@@ -1,29 +1,34 @@
 import Ember from 'ember';
-import { compileShader,
+import GlMatrix from 'npm:gl-matrix';
+import {
+  compileShader,
   linkShader,
   cacheUniformLocation
 } from '../helpers/gl-helpers';
 
-const PINK = { r: 1.0, g: 0.75, b: 0.80 };
-const UNIFORM_NAMES = ['time', 'mouse', 'resolution', 'backBuffer'];
+const GRAY = { r: 0.75, g: 0.75, b: 0.75 };
+const UNIFORM_NAMES = ['time', 'mouse', 'resolution', 'model'];
 
 // https://github.com/mrdoob/glsl-sandbox
 export default Ember.Component.extend({
   classNames: ['canvas-wrapper'],
   tagName: 'canvas',
 
-  init() {
-    this._super(...arguments);
-    this.set('startTime', Date.now());
-  },
-
   time() {
     return (Date.now() - this.get('startTime')) / 1000.0;
   },
 
+  startTime: Date.now(),
+
+  shouldRotate: false,
+
+  dragPosition: null,
+
   mousePosition: {
     x: 0, y: 0
   },
+
+  model: GlMatrix.mat4.create(),
 
   programFromCompiledShaders(gl, vertexShader, fragmentShader) {
     var compiledVertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShader);
@@ -80,7 +85,7 @@ export default Ember.Component.extend({
   },
 
   clearGl(gl) {
-    gl.clearColor(PINK.r, PINK.g, PINK.b, 1.0);
+    gl.clearColor(GRAY.r, GRAY.g, GRAY.b, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.depthFunc(gl.LEQUAL);
@@ -95,7 +100,7 @@ export default Ember.Component.extend({
     gl.uniform1f(program.uniformsCache['time'], time);
     gl.uniform2f(program.uniformsCache['mouse'], mouse.x, mouse.y);
     gl.uniform2f(program.uniformsCache['resolution'], canvas.width, canvas.height );
-    gl.uniform1i(program.uniformsCache['backbuffer'], 0);
+    gl.uniformMatrix4fv(program.uniformsCache['model'], false, this.get('model'));
   },
 
   setVerticesOnGl(gl, program) {
@@ -136,18 +141,52 @@ export default Ember.Component.extend({
   configureEventListeners() {
     this.set('resizeCanvas', this._resizeCanvas.bind(this));
     this.set('mouseMoved', this._mouseMoved.bind(this));
+    this.set('mouseDown', this._mouseDown.bind(this));
+    this.set('mouseUp', this._mouseUp.bind(this));
+  },
+
+  handleSurfaceRotation(event) {
+    let shouldRotate = this.get('shouldRotate');
+    if (!shouldRotate) { return; }
+
+    let dragPosition = this.get('dragPosition');
+    if (!dragPosition) { dragPosition = this.normalizedCoordinates(event); }
+    let newPosition = this.normalizedCoordinates(event);
+    let x = newPosition.x - dragPosition.x;
+    let y = newPosition.y - dragPosition.y;
+    this.set('dragPosition', newPosition);
+
+    this.rotateSurface(x, y);
+  },
+
+  rotateSurface(x, y) {
+    let model = this.get('model');
+    GlMatrix.mat4.rotateX(model, model, -y);
+    GlMatrix.mat4.rotateY(model, model, -x);
   },
 
   addEventListeners() {
+    let canvas = this.get('element');
     this.configureEventListeners();
     window.addEventListener('resize', this.resizeCanvas, false);
     window.addEventListener('mousemove', this.mouseMoved, false);
+    canvas.addEventListener('mousedown', this.mouseDown, false);
+    canvas.addEventListener('mouseup', this.mouseUp, false);
   },
 
   removeEventListeners() {
-    const element = this.get('element');
-    element.removeEventListener('resize', this.resizeCanvas, false);
-    element.removeEventListener('mousemove', this.mouseMoved, false);
+    let canvas = this.get('element');
+    window.removeEventListener('resize', this.resizeCanvas, false);
+    window.removeEventListener('mousemove', this.mouseMoved, false);
+    canvas.removeEventListener('mousedown', this.mouseDown, false);
+    canvas.removeEventListener('mouseup', this.mouseUp, false);
+  },
+
+  normalizedCoordinates(event) {
+    return {
+      x: event.clientX / window.innerWidth,
+      y: 1 - event.clientY / window.innerHeight
+    };
   },
 
   _resizeCanvas() {
@@ -162,9 +201,17 @@ export default Ember.Component.extend({
   },
 
   _mouseMoved(event) {
-    let mouse = this.get('mousePosition');
-    mouse.x = event.clientX / window.innerWidth;
-    mouse.y = 1 - event.clientY / window.innerHeight;
+    this.set('mousePosition', this.normalizedCoordinates(event));
+    this.handleSurfaceRotation(event);
+  },
+
+  _mouseDown() {
+    this.set('shouldRotate', true);
+  },
+
+  _mouseUp() {
+    this.set('shouldRotate', false);
+    this.set('dragPosition', null);
   }
 });
 

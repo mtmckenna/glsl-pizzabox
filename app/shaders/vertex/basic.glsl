@@ -1,7 +1,10 @@
 attribute vec2 aPosition;
-varying vec4 v_Position;
+varying vec4 vPosition;
+varying vec2 vModelPosition;
+uniform mat4 model;
 
 void main() {
-  gl_Position = vec4(aPosition, 0, 1);
-	v_Position = gl_Position;
+  gl_Position = model * vec4(aPosition, 0, 1);
+  vModelPosition = aPosition;
+	vPosition = gl_Position;
 }
