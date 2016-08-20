@@ -7,12 +7,35 @@ import {
 } from '../helpers/gl-helpers';
 
 const GRAY = { r: 0.75, g: 0.75, b: 0.75 };
-const UNIFORM_NAMES = ['time', 'mouse', 'resolution', 'model'];
+const UNIFORM_NAMES = [
+  'time',
+  'mouse',
+  'resolution',
+  'modelMatrix',
+  'viewMatrix',
+  'projectionMatrix'
+];
 
 // https://github.com/mrdoob/glsl-sandbox
 export default Ember.Component.extend({
   classNames: ['canvas-wrapper'],
   tagName: 'canvas',
+
+  init() {
+    this._super(...arguments);
+    this.configureViewMatrix();
+    this.configureProjectionMatrix();
+  },
+
+  configureViewMatrix() {
+    let viewMatrix = this.get('viewMatrix');
+    GlMatrix.mat4.lookAt(viewMatrix, [0, 0, 0], [0, 0, 0], [0, 1, 0]);
+  },
+
+  configureProjectionMatrix() {
+    let projectionMatrix = this.get('projectionMatrix');
+    GlMatrix.mat4.ortho(projectionMatrix, -1, 1, -1, 1, 2, -2);
+  },
 
   time() {
     return (Date.now() - this.get('startTime')) / 1000.0;
@@ -28,7 +51,11 @@ export default Ember.Component.extend({
     x: 0, y: 0
   },
 
-  model: GlMatrix.mat4.create(),
+  modelMatrix: GlMatrix.mat4.create(),
+
+  viewMatrix: GlMatrix.mat4.create(),
+
+  projectionMatrix: GlMatrix.mat4.create(),
 
   programFromCompiledShaders(gl, vertexShader, fragmentShader) {
     var compiledVertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexShader);
@@ -100,11 +127,13 @@ export default Ember.Component.extend({
     gl.uniform1f(program.uniformsCache['time'], time);
     gl.uniform2f(program.uniformsCache['mouse'], mouse.x, mouse.y);
     gl.uniform2f(program.uniformsCache['resolution'], canvas.width, canvas.height );
-    gl.uniformMatrix4fv(program.uniformsCache['model'], false, this.get('model'));
+    gl.uniformMatrix4fv(program.uniformsCache['modelMatrix'], false, this.get('modelMatrix'));
+    gl.uniformMatrix4fv(program.uniformsCache['viewMatrix'], false, this.get('viewMatrix'));
+    gl.uniformMatrix4fv(program.uniformsCache['projectionMatrix'], false, this.get('projectionMatrix'));
   },
 
   setVerticesOnGl(gl, program) {
-    var positionLocation = gl.getAttribLocation(program, 'aPosition');
+    var positionLocation = gl.getAttribLocation(program, 'position');
     var buffer = gl.createBuffer();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -160,7 +189,7 @@ export default Ember.Component.extend({
   },
 
   rotateSurface(x, y) {
-    let model = this.get('model');
+    let model = this.get('modelMatrix');
     GlMatrix.mat4.rotateX(model, model, -y);
     GlMatrix.mat4.rotateY(model, model, -x);
   },
